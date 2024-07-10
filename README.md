@@ -25,9 +25,13 @@ Bu uygulama kullanıcıların notlarını dijital olarak tutmalarını ve bu not
 Ürün Özellikleri
 
 Dijital not tutma
+
 Yapay zeka yardımıyla soru oluşturma 
+
 Hafızada kalıcılılık 
+
 Notlara benzer quiz alıştırmaları
+
 
 HEDEF KİTLE
 
