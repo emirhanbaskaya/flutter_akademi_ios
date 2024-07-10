@@ -55,13 +55,24 @@ Sprint board update: Sprint board screenshotları:
 
 <img width="842" alt="akademi11" src="https://github.com/eliff5/flutter_akademi/assets/106667861/68b72736-ccbe-42e1-8b26-0c734fafeb02">
 
+<img width="154" alt="akademeiii" src="https://github.com/eliff5/flutter_akademi/assets/106667861/247132ea-6fb0-4814-a5d2-e3d83a73182a">
+
+![akademi1](https://github.com/eliff5/flutter_akademi/assets/106667861/6d08ab78-0921-4fec-9bac-2157e811c927)
 
 
 
-Sprint Review: Alınan kararlar: Veritabanı oluşturması email ile toplanacak veriler için gerekli görülmüştür. Fakat bir yandan da veritabanı form sayfası için gerekli olmamıştır. O sebeple PBI bir sonraki sprint'e aktarılmıştır. Çıkan ürünün çalışmasında ve testlerinde bir problem görülmemiştir. Ekstra koyulması gereken özellikler belirlenmiştir. Sprint Review katılımcıları: ......
+<img width="503" alt="image" src="https://github.com/eliff5/flutter_akademi/assets/106667861/57416bc0-6552-4134-b43d-4aeb35098398">
+
+
+
+
+
+
+Sprint Review: Alınan kararlar: Uygulama içinde öğrencinin notları bulunacak, bu notlara göre yapay zeka yardımıyla sorular oluşturulabilecek. Sorular doğru-yanlış şekilde kategorize edebilecek. Kullanıcı dostu sade ve anlaşılır bir arayüz tasarlanacak.
 
 Sprint Retrospective:
 
 Takım içindeki görev dağılımıyla ilgili düzenleme yapılması kararı alınmıştır
-Tahmin puanları gözden geçirilmeli ve sprint planlama toplantılarında gerekli geri bildirimlerin developer'lar tarafından verildiğine emin olunmalı
-Unit test'ler için ayrılan efor/saat arttırılmalı
+Tahmin puanları gözden geçirilmeli ve sprint planlama toplantılarında gerekli geri bildirimlerin developer'lar tarafından verildiğine emin olunmalıdır.
+Unit test'ler için ayrılan efor/saat arttırılmalı.
+Takım içinde eşit görev dağılımı sağlanamalıdır.
