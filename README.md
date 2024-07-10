@@ -5,9 +5,13 @@ Takım 51
 Ürün İle İlgili Bilgiler
 Takım Elemanları
 Emirhan Başkaya: Product Owner
+
 Elif Kaya: Scrum Master
+
 Emir Kağan Yiğit: Team Member/Developer
+
 Esra Akdemir: Team Member/Developer
+
 Emine Sena Olcar: Team Member/Developer
 
 Ürün İsmi
