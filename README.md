@@ -85,6 +85,8 @@ Takım içinde eşit görev dağılımı sağlanamalıdır.
 
 
 Sprint 2
+
+
 Sprint içinde tamamlanması tahmin edilen puan: 100 Puan
 
 Daily Scrum: Daily Scrum toplantılarının Whatsapp üzerinden yapılmasına karar verilmiştir. 
@@ -95,7 +97,6 @@ Sprint board update: Sprint board screenshotları:
 
 
 Ürün Durumu: Ekran görüntüleri: 
-![WhatsApp Görsel 2024-07-21 saat 14 10 06_b326a075](https://github.com/user-attachments/assets/68bf6a8c-f6e0-40c0-9b6f-c7046ba22cba)
 ![akademi2](https://github.com/user-attachments/assets/143710e6-4c8d-4c1c-8152-0d62054d9246)
 
 
