@@ -72,7 +72,7 @@ Sprint board update: Sprint board screenshotları:
 
 
 
-Sprint Review: Alınan kararlar: Uygulama içinde öğrencinin notları bulunacak, bu notlara göre yapay zeka yardımıyla sorular oluşturulabilecek. Sorular doğru-yanlış şekilde kategorize edebilecek. Kullanıcı dostu sade ve anlaşılır bir arayüz tasarlanacak.
+Sprint Review: Alınan kararlar: Uygulama içinde öğrencinin notları bulunacak, bu notlara göre yapay zeka yardımıyla sorular oluşturulabilecek. Sorular doğru-yanlış şekilde kategorize edebilecek. Son olarak kullanıcı dostu sade ve anlaşılır bir arayüz tasarlanacak.
 
 Sprint Retrospective:
 
@@ -80,3 +80,30 @@ Takım içindeki görev dağılımıyla ilgili düzenleme yapılması kararı al
 Tahmin puanları gözden geçirilmeli ve sprint planlama toplantılarında gerekli geri bildirimlerin developer'lar tarafından verildiğine emin olunmalıdır.
 Unit test'ler için ayrılan efor/saat arttırılmalı.
 Takım içinde eşit görev dağılımı sağlanamalıdır.
+
+
+
+
+Sprint 2
+Sprint içinde tamamlanması tahmin edilen puan: 100 Puan
+
+Daily Scrum: Daily Scrum toplantılarının Whatsapp üzerinden yapılmasına karar verilmiştir. 
+
+Sprint board update: Sprint board screenshotları: 
+<img width="593" alt="image" src="https://github.com/user-attachments/assets/98198c73-9096-4011-9736-8d9bc550b5f2">
+<img width="478" alt="image" src="https://github.com/user-attachments/assets/c4bd3325-c8c3-41e1-a12f-3047325fa224">
+
+
+Ürün Durumu: Ekran görüntüleri: 
+![WhatsApp Görsel 2024-07-21 saat 14 10 06_b326a075](https://github.com/user-attachments/assets/68bf6a8c-f6e0-40c0-9b6f-c7046ba22cba)
+![akademi2](https://github.com/user-attachments/assets/143710e6-4c8d-4c1c-8152-0d62054d9246)
+
+
+Sprint Review: Alınan kararlar: Kullanıcı temel sayfaların arayüzleri, algoritmaları kodlanmış, yapay zeka kullanarak soru oluşturma ve soru havuzu oluşturulmuş  ve eksiklikleri değerlendirilmiştir. Kullanıcı yanıtlarını kaydetme bu yanıtlara göre soru hazırlama algoritmaları tamamlanmıştır. Sorulara verilen yanıtlar veritabanına kaydedilmiştir.
+
+Sprint Retrospective:
+
+Takım üyelerinin gelecek sprintlerde daha fazla aktif olması gerektiğine vurgu yapılmıştır.
+
+Product Backlog URL 
+https://miro.com/app/board/uXjVK0fzum0=/
