@@ -1,110 +1,16 @@
-# flutter_akademi
-TAKIM İSMİ 
-Takım 51
+# new_project
 
-Ürün İle İlgili Bilgiler
-Takım Elemanları
+A new Flutter project.
 
-Emirhan Başkaya: Product Owner
+## Getting Started
 
-Elif Kaya: Scrum Master
+This project is a starting point for a Flutter application.
 
-Emir Kağan Yiğit: Team Member/Developer
+A few resources to get you started if this is your first Flutter project:
 
-Esra Akdemir: Team Member/Developer
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-Emine Sena Olcar: Team Member/Developer
-
-Ürün İsmi
---Study App--
-
-Ürün Açıklaması
-
-Bu uygulama kullanıcıların notlarını dijital olarak tutmalarını ve bu notlar üzerinden yapay zeka yardımıyla sorular oluşturmalarını sağlayan bir platform sunar. Kullanıcılar notlarını girdikten sonra "Soru Sor" düğmesine her bastıklarında farklı bir soruyla karşılaşırlar. Uygulama ayrıca, kullanıcıların not giriş kutucuklarının başlıklarını ve arka planını özelleştirmelerine olanak tanır böylece kullanıcı deneyimi daha kişiselleştirilmiş hale gelir.
-
-Ürün Özellikleri
-
-Dijital not tutma
-
-Yapay zeka yardımıyla soru oluşturma 
-
-Hafızada kalıcılılık 
-
-Notlara benzer quiz alıştırmaları
-
-
-HEDEF KİTLE
-
-Öğrenmeye açık ve hevesli herkes
-
-Product Backlog URL
-
-https://miro.com/app/board/uXjVK0fzum0=/
-
-Sprint 1
-
-Sprint Notları: User Story'ler product backlog'ların içine yazılmıştır. Product backlog item'lara tıklandığında hikayelerin detayları okunabilir.
-
-Sprint içinde tamamlanması tahmin edilen puan: 60 Puan
-
-Puan tamamlama mantığı: Toplamda proje boyunca tamamlanması gereken 240 puanlık backlog bulunmaktadır. 4 sprint'e bölündüğünde ilk sprint'in en azından 60 ile başlaması gerektiğine karar verildi.
-
-Backlog düzeni ve Story seçimleri: Backlog'umuz ilk yapılacak story'lere göre düzenlenmiştir. Sprint başına tahmin edilen puan sayısını geçmeyecek şekilde sıradan seçimler yapılmaktadır. Story başına çıkan tahmin puanı, toplam puanın yarısından az tutulmuştur. Her sprint için belli bir puan belirlendi.
-
-Story'ler yapılacak işlere bölünmüştür. Miro Board'da gözüken kırmızı item'lar yapılacak işleri gösterirken, mavi item'lar story'leri temsil etmektedir.
-
-Daily Scrum: Daily Scrum toplantılarının Google Meets üzerinden yapılmasına karar verilmiştir. Daily Scrum toplantısı örneği jpeg veya word olarak Readme'de tarafımızdan paylaşılmaktadır.
-
-Sprint board update: Sprint board screenshotları:
-
-<img width="842" alt="akademi11" src="https://github.com/eliff5/flutter_akademi/assets/106667861/68b72736-ccbe-42e1-8b26-0c734fafeb02">
-
-<img width="154" alt="akademeiii" src="https://github.com/eliff5/flutter_akademi/assets/106667861/247132ea-6fb0-4814-a5d2-e3d83a73182a">
-
-![akademi1](https://github.com/eliff5/flutter_akademi/assets/106667861/6d08ab78-0921-4fec-9bac-2157e811c927)
-
-
-
-<img width="503" alt="image" src="https://github.com/eliff5/flutter_akademi/assets/106667861/57416bc0-6552-4134-b43d-4aeb35098398">
-
-
-
-
-
-
-Sprint Review: Alınan kararlar: Uygulama içinde öğrencinin notları bulunacak, bu notlara göre yapay zeka yardımıyla sorular oluşturulabilecek. Sorular doğru-yanlış şekilde kategorize edebilecek. Son olarak kullanıcı dostu sade ve anlaşılır bir arayüz tasarlanacak.
-
-Sprint Retrospective:
-
-Takım içindeki görev dağılımıyla ilgili düzenleme yapılması kararı alınmıştır
-Tahmin puanları gözden geçirilmeli ve sprint planlama toplantılarında gerekli geri bildirimlerin developer'lar tarafından verildiğine emin olunmalıdır.
-Unit test'ler için ayrılan efor/saat arttırılmalı.
-Takım içinde eşit görev dağılımı sağlanamalıdır.
-
-
-
-
-Sprint 2
-
-
-Sprint içinde tamamlanması tahmin edilen puan: 100 Puan
-
-Daily Scrum: Daily Scrum toplantılarının Whatsapp üzerinden yapılmasına karar verilmiştir. 
-
-Sprint board update: Sprint board screenshotları: 
-<img width="593" alt="image" src="https://github.com/user-attachments/assets/98198c73-9096-4011-9736-8d9bc550b5f2">
-<img width="478" alt="image" src="https://github.com/user-attachments/assets/c4bd3325-c8c3-41e1-a12f-3047325fa224">
-
-
-Ürün Durumu: Ekran görüntüleri: 
-![akademi2](https://github.com/user-attachments/assets/143710e6-4c8d-4c1c-8152-0d62054d9246)
-
-
-Sprint Review: Alınan kararlar: Kullanıcı temel sayfaların arayüzleri, algoritmaları kodlanmış, yapay zeka kullanarak soru oluşturma ve soru havuzu oluşturulmuş  ve eksiklikleri değerlendirilmiştir. Kullanıcı yanıtlarını kaydetme bu yanıtlara göre soru hazırlama algoritmaları tamamlanmıştır. Sorulara verilen yanıtlar veritabanına kaydedilmiştir.
-
-Sprint Retrospective:
-
-Takım üyelerinin gelecek sprintlerde daha fazla aktif olması gerektiğine vurgu yapılmıştır.
-
-Product Backlog URL 
-https://miro.com/app/board/uXjVK0fzum0=/
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
