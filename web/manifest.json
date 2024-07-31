@@ -1,6 +1,6 @@
 {
-    "name": "new_project",
-    "short_name": "new_project",
+    "name": "pdf_uygulamasi_eng",
+    "short_name": "pdf_uygulamasi_eng",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
