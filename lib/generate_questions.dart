@@ -37,7 +37,7 @@ class QuestionGenerator {
           'messages': [
             {
               'role': 'system',
-              'content': 'Generate $numberOfQuestions multiple choice questions and their options from the following text. For each question, include one correct answer labeled with "(correct)" and three incorrect answers.'
+              'content': 'Generate $numberOfQuestions multiple choice questions and their options from the following text. For each question, include one correct answer and three incorrect answers without labeling them as correct or incorrect.'
             },
             {
               'role': 'user',
