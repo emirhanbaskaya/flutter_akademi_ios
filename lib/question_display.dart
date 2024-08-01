@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'pdf_text.dart';
+import 'generate_questions.dart';
+import 'question_control_screen.dart';
+import 'database.dart';
+import 'home_screen.dart'; // Import HomeScreen
 
 class QuestionDisplayScreen extends StatefulWidget {
   final String pdfPath;
@@ -33,79 +33,16 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
   }
 
   Future<void> _generateQuestions() async {
-    final String apiUrl = dotenv.env['OPENAI_API_URL'] ?? '';
-    final String apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
-
-    print('API URL: $apiUrl');
-    print('API Key: $apiKey');
-
-    if (apiUrl.isEmpty || apiKey.isEmpty) {
-      print('API URL or API Key is not set.');
-      setState(() {
-        isLoading = false;
-      });
-      return;
-    }
-
-    final String text = await PDFTextExtractor.extractText(widget.pdfPath);
-
-    print('Extracted Text: $text');
-
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode({
-          'model': 'gpt-3.5-turbo',
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'Generate ${widget.numberOfQuestions} multiple choice questions and their options from the following text. Provide correct answers as well.'
-            },
-            {
-              'role': 'user',
-              'content': text
-            }
-          ],
-          'max_tokens': 2048,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          questions = List<Map<String, dynamic>>.from(data['choices'].map((choice) {
-            final content = choice['message']['content'].toString();
-            final parts = content.split('\n');
-            final question = parts[0];
-            final options = parts.skip(1).where((part) => part.isNotEmpty && !part.startsWith('*')).map((option) {
-              final optionText = option.replaceFirst(RegExp(r'^[a-d]\.\s+'), ''); // Seçenek başındaki harfi ve boşluğu kaldırır
-              return optionText;
-            }).toList();
-            return {
-              'question': question,
-              'options': options,
-            };
-          }));
-          _selectedAnswers = List<String?>.filled(questions.length, null);
-          isLoading = false;
-        });
-      } else {
-        print('Failed to generate questions. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error during API call: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
+    QuestionGenerator generator = QuestionGenerator(
+      pdfPath: widget.pdfPath,
+      numberOfQuestions: widget.numberOfQuestions,
+    );
+    List<Map<String, dynamic>> generatedQuestions = await generator.generateQuestions();
+    setState(() {
+      questions = generatedQuestions;
+      _selectedAnswers = List<String?>.filled(questions.length, null);
+      isLoading = false;
+    });
   }
 
   void _selectAnswer(String? answer, int index) {
@@ -116,24 +53,63 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
 
   void _submitQuiz() {
     int correctAnswersCount = 0;
-    // Bu kısımda doğru cevap sayısını kontrol etmek için doğru cevapların saklandığı başka bir yöntem kullanmalısınız.
-    // Şu anda doğru cevaplar elimizde olmadığı için her zaman 0 dönecektir.
-    _showScoreDialog(correctAnswersCount);
+    for (int i = 0; i < questions.length; i++) {
+      if (_selectedAnswers[i] == questions[i]['correctAnswer']) {
+        correctAnswersCount++;
+      }
+    }
+
+    List<Map<String, dynamic>> incorrectQuestions = [];
+    for (int i = 0; i < questions.length; i++) {
+      if (_selectedAnswers[i] != questions[i]['correctAnswer']) {
+        incorrectQuestions.add({
+          'question': questions[i]['question'],
+          'yourAnswer': _selectedAnswers[i],
+          'correctAnswer': questions[i]['correctAnswer'],
+        });
+      }
+    }
+
+    _showScoreDialog(correctAnswersCount, incorrectQuestions);
   }
 
-  void _showScoreDialog(int correctAnswersCount) {
+  void _showScoreDialog(int correctAnswersCount, List<Map<String, dynamic>> incorrectQuestions) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Quiz Result'),
-        content: Text('You got $correctAnswersCount out of ${questions.length} correct.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('You got $correctAnswersCount out of ${questions.length} correct.'),
+            SizedBox(height: 20.0),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuestionControlScreen(
+                      incorrectQuestions: incorrectQuestions,
+                    ),
+                  ),
+                );
+              },
+              child: Text('See Incorrect Questions'),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context); // Go back to the previous screen
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+                    (Route<dynamic> route) => false,
+              );
             },
-            child: Text('OK'),
+            child: Text('Home'),
           ),
         ],
       ),
@@ -145,52 +121,67 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Multiple Choice Questions"),
+        backgroundColor: Colors.teal,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: questions.length,
-                itemBuilder: (context, index) {
-                  final question = questions[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0), // Sorular arasında boşluk
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${index + 1}. ${question['question']}',
-                          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 8.0),
-                        ...question['options'].map<Widget>((option) {
+        child: ListView.builder(
+          itemCount: questions.length,
+          itemBuilder: (context, index) {
+            final question = questions[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Card(
+                elevation: 4.0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${index + 1}. ${question['question']}',
+                        style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8.0),
+                      Column(
+                        children: question['options'].map<Widget>((option) {
                           return RadioListTile<String>(
-                            title: Text(option),
+                            title: Text(option, style: TextStyle(fontSize: 16.0)),
                             value: option,
                             groupValue: _selectedAnswers[index],
                             onChanged: (value) {
                               _selectAnswer(value, index);
                             },
+                            activeColor: Colors.teal,
                           );
                         }).toList(),
-                      ],
-                    ),
-                  );
-                },
+                      ),
+                    ],
+                  ),
+                ),
               ),
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ElevatedButton(
+          onPressed: _submitQuiz,
+          child: Text('Submit'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal,
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            textStyle: TextStyle(fontSize: 18.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
             ),
-            Center(
-              child: ElevatedButton(
-                onPressed: _submitQuiz,
-                child: Text('Submit'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,31 +1,36 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
-import 'home_screen.dart';
-import 'database.dart';
+import 'home_screen.dart'; // Home screen import
+import 'register_screen.dart'; // Register ekranı import
+import 'database.dart'; // Veritabanı yardımcı sınıfı import
 
-class LoginScreen extends StatefulWidget {
+class LoginPage extends StatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _identifierController = TextEditingController();
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
   Future<void> _login() async {
-    final identifier = _identifierController.text;
+    final username = _usernameController.text;
     final password = _passwordController.text;
 
-    final user = await _dbHelper.getUser(identifier);
+    final user = await _dbHelper.getUser(username);
     if (user != null && user['password'] == password) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login successful')),
+      );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(), // Redirect to HomeScreen after successful login
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid email/username or password')),
+        SnackBar(content: Text('Invalid username or password')),
       );
     }
   }
@@ -45,8 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 16),
               TextField(
-                controller: _identifierController,
-                decoration: InputDecoration(labelText: 'Email or Username'),
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: 'Username'),
               ),
               TextField(
                 controller: _passwordController,
@@ -62,10 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => RegisterScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => RegisterScreen(),
+                    ),
                   );
                 },
-                child: Text('Register'),
+                child: Text('Don\'t have an account? Register'),
               ),
             ],
           ),

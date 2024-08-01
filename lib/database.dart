@@ -32,24 +32,30 @@ class DatabaseHelper {
         ''');
         await db.execute('''
           CREATE TABLE modules(
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
             difficulty TEXT,
-            questionCount INTEGER
+            questionCount INTEGER,
+            pdfPath TEXT
           )
         ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute('ALTER TABLE users ADD COLUMN username TEXT UNIQUE');
-        }
+        await db.execute('''
+          CREATE TABLE questions(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            moduleId INTEGER,
+            question TEXT,
+            correctAnswer TEXT,
+            options TEXT,
+            FOREIGN KEY (moduleId) REFERENCES modules (id)
+          )
+        ''');
       },
     );
   }
 
-  Future<int> insertUser(Map<String, dynamic> row) async {
+  Future<int> insertUser(Map<String, dynamic> user) async {
     Database db = await database;
-    return await db.insert('users', row);
+    return await db.insert('users', user);
   }
 
   Future<Map<String, dynamic>?> getUser(String identifier) async {
@@ -65,13 +71,43 @@ class DatabaseHelper {
     return null;
   }
 
-  Future<void> deleteDatabase() async {
-    String path = join(await getDatabasesPath(), 'app_database.db');
-    await databaseFactory.deleteDatabase(path);
+  Future<int> insertModule(Map<String, dynamic> module) async {
+    Database db = await database;
+    return await db.insert('modules', module);
+  }
+
+  Future<int> insertQuestion(Map<String, dynamic> question) async {
+    Database db = await database;
+    return await db.insert('questions', question);
+  }
+
+  Future<int> updateModule(Map<String, dynamic> module) async {
+    Database db = await database;
+    return await db.update('modules', module, where: 'id = ?', whereArgs: [module['id']]);
   }
 
   Future<List<Map<String, dynamic>>> queryAllModules() async {
     Database db = await database;
     return await db.query('modules');
+  }
+
+  Future<List<Map<String, dynamic>>> queryQuestions(int moduleId) async {
+    Database db = await database;
+    return await db.query('questions', where: 'moduleId = ?', whereArgs: [moduleId]);
+  }
+
+  Future<int> deleteQuestions(int moduleId) async {
+    Database db = await database;
+    return await db.delete('questions', where: 'moduleId = ?', whereArgs: [moduleId]);
+  }
+
+  Future<int> deleteModule(int id) async {
+    Database db = await database;
+    return await db.delete('modules', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteDatabase() async {
+    String path = join(await getDatabasesPath(), 'app_database.db');
+    await databaseFactory.deleteDatabase(path);
   }
 }
