@@ -85,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _pickPdf,
         child: Icon(Icons.add),
-        backgroundColor: Colors.blue,
+        backgroundColor: Color.fromARGB(255, 83, 101, 116),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
