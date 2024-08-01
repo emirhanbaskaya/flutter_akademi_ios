@@ -58,82 +58,77 @@ class _QuestionSetupScreenState extends State<QuestionSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Setup Questions'),
+        title: Text(
+          'Setup Questions',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.teal,
+        iconTheme: IconThemeData(color: Colors.white), // Geri tuşunun rengini beyaz yapar
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), // Klavye açıldığında alan ayırmak için
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Setup Your Quiz',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Difficulty',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              DropdownButton<String>(
-                value: _difficulty,
-                items: <String>['Easy', 'Medium', 'Hard'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _difficulty = newValue!;
-                  });
-                },
-              ),
-              SizedBox(height: 16.0),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: 'Enter your name',
-                  errorText: _isNameValid ? null : 'Name is required',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Difficulty',
+              style: TextStyle(fontSize: 18.0),
+              textAlign: TextAlign.center, // Metni ortalar
+            ),
+            SizedBox(height: 8.0), // Boşluk ekleme
+            DropdownButtonFormField<String>(
+              value: _difficulty,
+              items: <String>['Easy', 'Medium', 'Hard'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _difficulty = newValue!;
+                });
+              },
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
               ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
+            ),
+            SizedBox(height: 24.0), // Boşluk ekleme
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                hintText: 'Enter your name',
+                errorText: _isNameValid ? null : 'Name is required',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+            ),
+            Spacer(), // Kalan boşluğu doldurur ve butonu en altına yerleştirir
+            Center(
+              child: ElevatedButton(
                 onPressed: _generateQuestions,
-                child: Text('Generate Questions'),
+                child: Text(
+                  'Generate Questions',
+                  style: TextStyle(color: Colors.white), // Metin rengini beyaz yapar
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
                   textStyle: TextStyle(fontSize: 18.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                 ),
               ),
-              SizedBox(height: 16.0),
-              Text(
-                'Quiz Settings',
-                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-              ),
-              ListTile(
-                leading: Icon(Icons.question_answer),
-                title: Text('10 Questions'),
-              ),
-              ListTile(
-                leading: Icon(Icons.sort),
-                title: Text('Easy, Medium, Hard'),
-              ),
-              ListTile(
-                leading: Icon(Icons.person),
-                title: Text('Your Name'),
-              ),
-            ],
-          ),
+            ),
+            Spacer(), // Kalan boşluğu doldurur ve butonu en altına yerleştirir
+          ],
         ),
       ),
     );

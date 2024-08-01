@@ -103,6 +103,7 @@ class DatabaseHelper {
 
   Future<int> deleteModule(int id) async {
     Database db = await database;
+    await db.delete('questions', where: 'moduleId = ?', whereArgs: [id]);
     return await db.delete('modules', where: 'id = ?', whereArgs: [id]);
   }
 
