@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'pdf_viewer_page.dart';
-import 'pdf_model.dart';
-import 'pdf_database.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'login_screen.dart'; // Login ekranı import
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
   runApp(MyApp());
 }
 
@@ -14,15 +11,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PDF Soru Oluşturucu',
+      debugShowCheckedModeBanner: false,
+      title: 'PDF Uygulaması',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      debugShowCheckedModeBanner: false,
-      home: MyHomePage(),
+      home: LoginPage(), // Login ekranına yönlendir
     );
   }
 }
+<<<<<<< HEAD
+=======
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -91,3 +90,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+>>>>>>> main
