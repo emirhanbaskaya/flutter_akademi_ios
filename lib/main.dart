@@ -4,15 +4,19 @@ import 'package:page_transition/page_transition.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'Main Screen/pdf_view.dart';
+import 'pdf_view.dart';
 import 'database.dart';
-import 'Text&Question/question_display.dart';
-import 'Text&Question/question_setup.dart';
+import 'question_display.dart';
+import 'question_setup.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'dart:io';
+
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -112,17 +116,28 @@ class _HomeScreenState extends State<HomeScreen> {
     final typeGroup = XTypeGroup(
       label: 'PDFs',
       extensions: ['pdf'],
+      uniformTypeIdentifiers: ['com.adobe.pdf'],
     );
     final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
     if (file != null) {
+      // Get the app's documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = path.basename(file.path);
+      final savedFile = File(path.join(appDir.path, fileName));
+
+      // Copy the selected file to the app's documents directory
+      await savedFile.writeAsBytes(await file.readAsBytes());
+
+      // Navigate to the PDF view screen with the new file path
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PDFViewScreen(pdfPath: file.path),
+          builder: (context) => PDFViewScreen(pdfPath: savedFile.path),
         ),
       ).then((_) => _loadModules());
     }
   }
+
 
   void _showEditDeleteOptions(Map<String, dynamic> module) {
     showGeneralDialog(
@@ -258,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _pickPDF,
-              child: Text('Select PDF'),
+              child: Text('Select PDFfy'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal,
                 foregroundColor: Colors.white,

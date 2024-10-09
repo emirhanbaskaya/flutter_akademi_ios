@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // HomeScreen import
+import 'main.dart'; // HomeScreen import
 
 class QuestionControlScreen extends StatelessWidget {
   final List<Map<String, dynamic>> incorrectQuestions;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'generate_questions.dart';
 import 'question_control_screen.dart';
 import 'database.dart';
-import 'home_screen.dart'; // Import HomeScreen
+import 'main.dart'; // Import HomeScreen
 
 class QuestionDisplayScreen extends StatefulWidget {
   final String pdfPath;

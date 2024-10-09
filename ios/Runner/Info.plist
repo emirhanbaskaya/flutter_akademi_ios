@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Pdf Uygulamasi Eng</string>
+		<string>EduQuest</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>pdf_uygulamasi_eng</string>
+		<string>EduQuest</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -47,5 +47,15 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+
+		<!-- Dosya ve doküman erişim izinleri -->
+		<key>NSDocumentsUsageDescription</key>
+		<string>This app requires access to your documents to view PDF files.</string>
+		<key>NSFileUsageDescription</key>
+		<string>This app needs access to files for displaying PDF documents.</string>
+
+        <!-- Add this line for Flutter embedded views -->
+		<key>io.flutter.embedded_views_preview</key>
+		<true/>
 	</dict>
 </plist>
