@@ -1,5 +1,4 @@
-
-platform :ios, '12.0'
+platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -32,6 +31,13 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  # Firebase SDK'larını ekleyin
+  pod 'Firebase/Core'  # Firebase'in temel bileşenleri
+  pod 'Firebase/Analytics'  # Firebase Analytics
+  pod 'Firebase/Auth'  # Firebase Authentication
+  pod 'Firebase/Firestore'  # Firebase Firestore (veritabanı)
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -40,5 +46,10 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Bitcode devre dışı bırak
+    target.build_configurations.each do |config|
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+    end
   end
 end

@@ -13,20 +13,13 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
-if (flutterVersionCode == null) {
-    flutterVersionCode = "1"
-}
-
-def flutterVersionName = localProperties.getProperty("flutter.versionName")
-if (flutterVersionName == null) {
-    flutterVersionName = "1.0"
-}
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode", "1")
+def flutterVersionName = localProperties.getProperty("flutter.versionName", "1.0")
 
 android {
     namespace = "com.example.pdf_uygulamasi_eng"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = localProperties.getProperty("flutter.compileSdkVersion", "33").toInteger()
+    ndkVersion = localProperties.getProperty("flutter.ndkVersion", "23.1.7779620")
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -34,25 +27,42 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.pdf_uygulamasi_eng"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = localProperties.getProperty("flutter.minSdkVersion", "21").toInteger()
+        targetSdk = localProperties.getProperty("flutter.targetSdkVersion", "33").toInteger()
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Imzalama yapılandırması, kendine ait bir release key'in varsa buraya ekleyebilirsin.
             signingConfig = signingConfigs.debug
+            // Eğer projen release build'de minify edilmemişse aşağıdaki satırı kullanabilirsin:
+            // minifyEnabled false
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
 }
