@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'database_service.dart';
+import 'main.dart'; // HomeScreen import
+import 'register_screen.dart'; // Add this import
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main.dart'; // Home screen import
-import 'register_screen.dart'; // Register screen import
-import 'database.dart'; // Database helper import
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,25 +13,52 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _dbHelper = DatabaseHelper();
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberMe();
+  }
+
+  void _loadRememberMe() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('rememberMe') ?? false;
+    });
+  }
 
   Future<void> _login() async {
-    final username = _usernameController.text;
+    final email = _usernameController.text.trim();
     final password = _passwordController.text;
 
-    final user = await _dbHelper.getUser(username);
-    if (user != null && user['password'] == password) {
+    try {
+      // Kullanıcı giriş işlemi
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('email', user['email']);
-      _showSnackBar('Login successful');
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
-    } else {
-      _showSnackBar('Invalid username or password');
+      await prefs.setBool('rememberMe', _rememberMe);
+
+      final dbService = DatabaseService(uid: userCredential.user!.uid);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(dbService: dbService),
+        ),
+      );
+
+    } catch (e) {
+      _showSnackBar('Geçersiz email ya da şifre');
     }
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -48,13 +76,31 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: _textStyle(Colors.teal, 28.0, FontWeight.bold),
               ),
               SizedBox(height: 50),
-              _buildTextField(_usernameController, 'Username'),
+              _buildTextField(_usernameController, 'Email'),
               SizedBox(height: 16),
               _buildTextField(_passwordController, 'Password', obscureText: true),
+              SizedBox(height: 16),
+              CheckboxListTile(
+                title: Text(
+                  "Beni hatırla",
+                  style: TextStyle(color: Colors.white),
+                ),
+                value: _rememberMe,
+                onChanged: (newValue) {
+                  setState(() {
+                    _rememberMe = newValue!;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: Colors.teal,
+              ),
               SizedBox(height: 20),
-              _buildElevatedButton('Login', _login),
-              _buildTextButton('Don\'t have an account? Register', () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen()));
+              _buildElevatedButton('Giriş Yap', _login),
+              _buildTextButton('Hesabınız yok mu? Kayıt olun', () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RegisterScreen()),
+                );
               }),
             ],
           ),
@@ -63,7 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String labelText, {bool obscureText = false}) {
+  Widget _buildTextField(TextEditingController controller, String labelText,
+      {bool obscureText = false}) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
@@ -71,7 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
         labelStyle: TextStyle(color: Colors.grey),
         filled: true,
         fillColor: Colors.grey[800],
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        contentPadding:
+        EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.0),
           borderSide: BorderSide.none,
@@ -83,7 +131,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   TextStyle _textStyle(Color color, double fontSize, FontWeight fontWeight) {
-    return TextStyle(fontFamily: 'Roboto', color: color, fontSize: fontSize, fontWeight: fontWeight);
+    return TextStyle(
+      fontFamily: 'Roboto',
+      color: color,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+    );
   }
 
   Widget _buildElevatedButton(String text, VoidCallback onPressed) {
@@ -105,7 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
       onPressed: onPressed,
       child: Text(
         text,
-        style: TextStyle(color: Colors.tealAccent, fontStyle: FontStyle.italic),
+        style: TextStyle(
+          color: Colors.tealAccent,
+          fontStyle: FontStyle.italic,
+        ),
       ),
     );
   }

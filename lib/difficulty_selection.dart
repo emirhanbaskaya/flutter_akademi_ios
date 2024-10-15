@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'question_display.dart';
+import 'database_service.dart';
 
 class DifficultySelectionModal extends StatefulWidget {
   final Map<String, dynamic> module;
+  final DatabaseService dbService;
 
-  DifficultySelectionModal({required this.module});
+  DifficultySelectionModal({required this.module, required this.dbService});
 
   @override
   _DifficultySelectionModalState createState() => _DifficultySelectionModalState();
@@ -58,6 +60,8 @@ class _DifficultySelectionModalState extends State<DifficultySelectionModal> {
                     difficulty: _selectedDifficulty,
                     numberOfQuestions: widget.module['questionCount'],
                     name: widget.module['name'],
+                    moduleId: widget.module['id'],
+                    dbService: widget.dbService,
                   ),
                 ),
               );

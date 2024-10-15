@@ -2,12 +2,22 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pdf_text.dart';
+import 'database_service.dart';
 
 class QuestionGenerator {
   final String pdfPath;
   final int numberOfQuestions;
+  final String difficulty;
+  final String moduleId;
+  final DatabaseService dbService;
 
-  QuestionGenerator({required this.pdfPath, required this.numberOfQuestions});
+  QuestionGenerator({
+    required this.pdfPath,
+    required this.numberOfQuestions,
+    required this.difficulty,
+    required this.moduleId,
+    required this.dbService,
+  });
 
   Future<List<Map<String, dynamic>>> generateQuestions() async {
     final String apiUrl = dotenv.env['OPENAI_API_URL'] ?? '';
@@ -37,7 +47,8 @@ class QuestionGenerator {
           'messages': [
             {
               'role': 'system',
-              'content': 'Generate $numberOfQuestions multiple choice questions and their options from the following text. For each question, include one correct answer and three incorrect answers without labeling them as correct or incorrect.'
+              'content':
+              'Generate $numberOfQuestions multiple choice questions and their options from the following text. The questions should be of $difficulty difficulty level. For each question, include one correct answer and three incorrect answers. Label the correct answer with "(correct)".'
             },
             {
               'role': 'user',
@@ -56,10 +67,12 @@ class QuestionGenerator {
 
         for (var block in questionBlocks) {
           final lines = block.split('\n');
-          final question = lines[0];
-          final options = lines.skip(1).map((line) {
+          if (lines.isEmpty) continue;
+
+          final question = lines[0].trim();
+          final options = lines.skip(1).where((line) => line.trim().isNotEmpty).map((line) {
             final isCorrect = line.contains('(correct)');
-            final optionText = line.replaceFirst(RegExp(r'\s*\(correct\)\s*'), '');
+            final optionText = line.replaceFirst(RegExp(r'\s*\(correct\)\s*'), '').trim();
             return {
               'option': optionText,
               'isCorrect': isCorrect
@@ -75,6 +88,13 @@ class QuestionGenerator {
             'question': question,
             'options': options.map((option) => option['option']).toList(),
             'correctAnswer': correctAnswer,
+          });
+
+          // Save the question to Firestore
+          await dbService.insertQuestion(moduleId, {
+            'question': question,
+            'correctAnswer': correctAnswer,
+            'options': options.map((option) => option['option']).toList(),
           });
         }
 

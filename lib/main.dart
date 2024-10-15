@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pdf_view.dart';
-import 'database.dart';
+import 'database_service.dart';
 import 'question_display.dart';
 import 'question_setup.dart';
 import 'profile_screen.dart';
@@ -16,24 +16,61 @@ import 'register_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await Firebase.initializeApp();
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool rememberMe = prefs.getBool('rememberMe') ?? false;
+
+  User? currentUser = FirebaseAuth.instance.currentUser;
+
+  if (currentUser != null && !rememberMe) {
+    await FirebaseAuth.instance.signOut();
+    currentUser = null;
+  }
+
   runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
+
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
   bool _isDarkTheme = false;
+  DatabaseService? dbService;  // Başlangıçta nullable
 
   @override
   void initState() {
     super.initState();
+
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user == null) {
+        // Bu işlemi Future.delayed ile erteleyerek güvenceye alıyoruz
+        Future.delayed(Duration.zero, () {
+          if (mounted) {  // Bu widget'ın hala ekranda olduğundan emin olalım
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LoginScreen()),
+            );
+          }
+        });
+      } else {
+        print('Kullanıcı ID: ${user.uid}');
+        // dbService burada initialize ediliyor
+        dbService = DatabaseService(uid: user.uid);
+        _loadModules();
+      }
+    });
+
     _loadTheme();
   }
 
@@ -44,10 +81,20 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  Future<void> _loadModules() async {
+    try {
+      if (dbService != null) {
+        final data = await dbService!.queryAllModules();
+        print('Modüller Yüklendi: $data');
+      }
+    } catch (e) {
+      print('Modüller yüklenirken hata oluştu: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'EduQuest',
       theme: _isDarkTheme ? darkTheme : lightTheme,
       home: AnimatedSplashScreen(
@@ -60,7 +107,22 @@ class _MyAppState extends State<MyApp> {
             color: Colors.white,
           ),
         ),
-        nextScreen: LoginScreen(),
+        nextScreen: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            } else if (snapshot.hasData) {
+              final user = snapshot.data!;
+              dbService = DatabaseService(uid: user.uid);
+              return HomeScreen(dbService: dbService!);
+            } else {
+              return LoginScreen();
+            }
+          },
+        ),
         splashTransition: SplashTransition.fadeTransition,
         pageTransitionType: PageTransitionType.fade,
         backgroundColor: Colors.teal,
@@ -69,7 +131,6 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
 ThemeData lightTheme = ThemeData(
   primarySwatch: Colors.teal,
   brightness: Brightness.light,
@@ -85,11 +146,16 @@ ThemeData darkTheme = ThemeData(
 );
 
 class HomeScreen extends StatefulWidget {
+  final DatabaseService dbService;  // Accept dbService in the constructor
+
+  HomeScreen({required this.dbService});  // Add required parameter
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late DatabaseService dbService;
   List<Map<String, dynamic>> modules = [];
   final List<Color> colors = [
     Colors.green[200]!,
@@ -102,14 +168,37 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadModules();
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      dbService = DatabaseService(uid: user.uid);
+      _loadModules();
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    }
   }
 
   Future<void> _loadModules() async {
-    final data = await DatabaseHelper().queryAllModules();
-    setState(() {
-      modules = data;
-    });
+    try {
+      final data = await widget.dbService.queryAllModules();  // Use widget.dbService
+      setState(() {
+        modules = data;
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      } else {
+        print('FirebaseException: ${e.code} - ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('Beklenmeyen bir hata oluştu: $e');
+      print('Hata detayları: $stackTrace');
+    }
   }
 
   Future<void> _pickPDF() async {
@@ -120,15 +209,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
     if (file != null) {
-      // Get the app's documents directory
       final appDir = await getApplicationDocumentsDirectory();
       final fileName = path.basename(file.path);
       final savedFile = File(path.join(appDir.path, fileName));
 
-      // Copy the selected file to the app's documents directory
       await savedFile.writeAsBytes(await file.readAsBytes());
 
-      // Navigate to the PDF view screen with the new file path
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -137,7 +223,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ).then((_) => _loadModules());
     }
   }
-
 
   void _showEditDeleteOptions(Map<String, dynamic> module) {
     showGeneralDialog(
@@ -152,6 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: EditDeleteModal(
               module: module,
               onModuleUpdated: _loadModules,
+              dbService: widget.dbService,  // Pass dbService
             ),
           ),
         );
@@ -173,8 +259,22 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return DifficultySelectionModal(module: module);
+        return DifficultySelectionModal(
+          module: module,
+          dbService: widget.dbService,  // Pass dbService
+        );
       },
+    );
+  }
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('rememberMe', false);
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+          (route) => false,
     );
   }
 
@@ -204,6 +304,12 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout,
+          ),
+        ],
       ),
       drawer: Drawer(
         child: Container(
@@ -216,7 +322,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Menu',
-                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
                 onTap: () {},
@@ -224,7 +333,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Spacer(),
               ListTile(
                 leading: Icon(Icons.person, color: Colors.white, size: 30),
-                title: Text('Profile', style: TextStyle(color: Colors.white, fontSize: 20)),
+                title: Text('Profile',
+                    style: TextStyle(color: Colors.white, fontSize: 20)),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -234,7 +344,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ListTile(
                 leading: Icon(Icons.settings, color: Colors.white, size: 30),
-                title: Text('Settings', style: TextStyle(color: Colors.white, fontSize: 20)),
+                title: Text('Settings',
+                    style: TextStyle(color: Colors.white, fontSize: 20)),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -244,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ListTile(
                 leading: Icon(Icons.info, color: Colors.white, size: 30),
-                title: Text('About', style: TextStyle(color: Colors.white, fontSize: 20)),
+                title: Text('About',
+                    style: TextStyle(color: Colors.white, fontSize: 20)),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -273,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _pickPDF,
-              child: Text('Select PDFfy'),
+              child: Text('Select PDF'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal,
                 foregroundColor: Colors.white,
@@ -291,7 +403,8 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final module = modules[index];
                 return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                  margin: EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 16.0),
                   decoration: BoxDecoration(
                     color: colors[index % colors.length],
                     borderRadius: BorderRadius.circular(15.0),
@@ -346,11 +459,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// EditDeleteModal and DifficultySelectionModal implementations go here...
+
 class EditDeleteModal extends StatefulWidget {
   final Map<String, dynamic> module;
   final VoidCallback onModuleUpdated;
+  final DatabaseService dbService;
 
-  EditDeleteModal({required this.module, required this.onModuleUpdated});
+  EditDeleteModal({
+    required this.module,
+    required this.onModuleUpdated,
+    required this.dbService,
+  });
 
   @override
   _EditDeleteModalState createState() => _EditDeleteModalState();
@@ -367,19 +487,18 @@ class _EditDeleteModalState extends State<EditDeleteModal> {
 
   Future<void> _updateModule() async {
     final updatedModule = {
-      'id': widget.module['id'],
       'name': _nameController.text,
       'difficulty': widget.module['difficulty'],
       'questionCount': widget.module['questionCount'],
       'pdfPath': widget.module['pdfPath'],
     };
-    await DatabaseHelper().updateModule(updatedModule);
+    await widget.dbService.updateModule(widget.module['id'], updatedModule);
     widget.onModuleUpdated();
     Navigator.pop(context);
   }
 
   Future<void> _deleteModule() async {
-    await DatabaseHelper().deleteModule(widget.module['id']);
+    await widget.dbService.deleteModule(widget.module['id']);
     widget.onModuleUpdated();
     Navigator.pop(context);
   }
@@ -436,11 +555,16 @@ class _EditDeleteModalState extends State<EditDeleteModal> {
 
 class DifficultySelectionModal extends StatefulWidget {
   final Map<String, dynamic> module;
+  final DatabaseService dbService;
 
-  DifficultySelectionModal({required this.module});
+  DifficultySelectionModal({
+    required this.module,
+    required this.dbService,
+  });
 
   @override
-  _DifficultySelectionModalState createState() => _DifficultySelectionModalState();
+  _DifficultySelectionModalState createState() =>
+      _DifficultySelectionModalState();
 }
 
 class _DifficultySelectionModalState extends State<DifficultySelectionModal> {
@@ -491,6 +615,8 @@ class _DifficultySelectionModalState extends State<DifficultySelectionModal> {
                     difficulty: _selectedDifficulty,
                     numberOfQuestions: widget.module['questionCount'],
                     name: widget.module['name'],
+                    moduleId: widget.module['id'],
+                    dbService: widget.dbService,
                   ),
                 ),
               ).then((_) {

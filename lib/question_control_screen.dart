@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'main.dart'; // HomeScreen import
+import 'database_service.dart';
 
 class QuestionControlScreen extends StatelessWidget {
   final List<Map<String, dynamic>> incorrectQuestions;
+  final DatabaseService dbService;
 
-  QuestionControlScreen({required this.incorrectQuestions});
+  QuestionControlScreen({
+    required this.incorrectQuestions,
+    required this.dbService,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,6 +17,7 @@ class QuestionControlScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Incorrect Answers'),
         backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -58,13 +64,14 @@ class QuestionControlScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
+              MaterialPageRoute(builder: (context) => HomeScreen(dbService: dbService)),
                   (Route<dynamic> route) => false,
             );
           },
           child: Text('Home'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16.0),
             textStyle: TextStyle(fontSize: 18.0),
             shape: RoundedRectangleBorder(

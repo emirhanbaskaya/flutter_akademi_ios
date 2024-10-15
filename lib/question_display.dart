@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'generate_questions.dart';
 import 'question_control_screen.dart';
-import 'database.dart';
+import 'database_service.dart'; // Updated import
 import 'main.dart'; // Import HomeScreen
 
 class QuestionDisplayScreen extends StatefulWidget {
@@ -9,12 +9,16 @@ class QuestionDisplayScreen extends StatefulWidget {
   final String difficulty;
   final int numberOfQuestions;
   final String name;
+  final String moduleId;
+  final DatabaseService dbService;
 
   QuestionDisplayScreen({
     required this.pdfPath,
     required this.difficulty,
     required this.numberOfQuestions,
     required this.name,
+    required this.moduleId,
+    required this.dbService,
   });
 
   @override
@@ -24,7 +28,7 @@ class QuestionDisplayScreen extends StatefulWidget {
 class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
   List<Map<String, dynamic>> questions = [];
   bool isLoading = true;
-  List<String?> _selectedAnswers = List<String?>.filled(0, null);
+  List<String?> _selectedAnswers = [];
 
   @override
   void initState() {
@@ -36,6 +40,9 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
     QuestionGenerator generator = QuestionGenerator(
       pdfPath: widget.pdfPath,
       numberOfQuestions: widget.numberOfQuestions,
+      difficulty: widget.difficulty,
+      moduleId: widget.moduleId,
+      dbService: widget.dbService,
     );
     List<Map<String, dynamic>> generatedQuestions = await generator.generateQuestions();
     setState(() {
@@ -91,6 +98,7 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
                   MaterialPageRoute(
                     builder: (context) => QuestionControlScreen(
                       incorrectQuestions: incorrectQuestions,
+                      dbService: widget.dbService, // Pass dbService
                     ),
                   ),
                 );
@@ -105,7 +113,7 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
               Navigator.pop(context);
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => HomeScreen()),
+                MaterialPageRoute(builder: (context) => HomeScreen(dbService: widget.dbService)),
                     (Route<dynamic> route) => false,
               );
             },
@@ -120,7 +128,10 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Multiple Choice Questions"),
+        title: Text(
+          "Multiple Choice Questions",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.teal,
       ),
       body: isLoading
@@ -144,7 +155,7 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${index + 1}. ${question['question']}',
+                        '${question['question']}',
                         style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 8.0),
@@ -176,6 +187,7 @@ class _QuestionDisplayScreenState extends State<QuestionDisplayScreen> {
           child: Text('Submit'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16.0),
             textStyle: TextStyle(fontSize: 18.0),
             shape: RoundedRectangleBorder(

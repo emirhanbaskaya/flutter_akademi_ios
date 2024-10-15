@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login_screen.dart';
-import 'database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -13,7 +13,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   TextEditingController _emailController = TextEditingController();
   TextEditingController _usernameController = TextEditingController();
   String _currentUsername = "";
-  DatabaseHelper _dbHelper = DatabaseHelper();
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -27,44 +27,136 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _isDarkTheme = prefs.getBool('isDarkTheme') ?? false;
     });
 
-    String? email = prefs.getString('email');
-    if (email != null) {
-      Map<String, dynamic>? user = await _dbHelper.getUser(email);
-      if (user != null) {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc =
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
         setState(() {
-          _emailController.text = user['email'];
-          _usernameController.text = user['username'];
-          _currentUsername = user['username'];
+          _emailController.text = user.email ?? '';
+          _usernameController.text = userDoc['username'] ?? '';
+          _currentUsername = userDoc['username'] ?? '';
+          _isLoading = false;
         });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User data not found')),
+        );
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
+  Future<void> _updateUsername() async {
+    String newUsername = _usernameController.text.trim();
+    if (newUsername.isEmpty) {
+      _showSnackBar('Username cannot be empty');
+      return;
+    }
+
+    // Check if the username is already taken
+    bool isUsernameTaken = await _isUsernameTaken(newUsername);
+    if (isUsernameTaken) {
+      _showSnackBar('Username already exists');
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'username': newUsername,
+        });
+        setState(() {
+          _currentUsername = newUsername;
+        });
+        _showSnackBar('Username updated successfully');
+      } catch (e) {
+        _showSnackBar('Failed to update username');
       }
     }
   }
 
-  Future<void> _updateUser() async {
-    final email = _emailController.text;
-    final username = _usernameController.text;
-
-    final user = await _dbHelper.getUser(email);
-    if (user != null) {
-      Map<String, dynamic> updatedUser = Map.from(user);
-      updatedUser['email'] = email;
-      updatedUser['username'] = username;
-      await _dbHelper.updateUser(updatedUser);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User information updated')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User not found')),
-      );
+  Future<void> _updateEmail() async {
+    String newEmail = _emailController.text.trim();
+    if (newEmail.isEmpty) {
+      _showSnackBar('Email cannot be empty');
+      return;
     }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await user.updateEmail(newEmail);
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'email': newEmail,
+        });
+        _showSnackBar('Email updated successfully');
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          _showSnackBar('Please re-authenticate to update email');
+        } else if (e.code == 'email-already-in-use') {
+          _showSnackBar('Email is already in use');
+        } else {
+          _showSnackBar('Failed to update email');
+        }
+      } catch (e) {
+        _showSnackBar('An error occurred');
+      }
+    }
+  }
+
+  Future<void> _updatePassword(String newPassword) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await user.updatePassword(newPassword);
+        _showSnackBar('Password updated successfully');
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'weak-password') {
+          _showSnackBar('Password should be at least 6 characters');
+        } else if (e.code == 'requires-recent-login') {
+          _showSnackBar('Please re-authenticate to update password');
+        } else {
+          _showSnackBar('Failed to update password');
+        }
+      } catch (e) {
+        _showSnackBar('An error occurred');
+      }
+    }
+  }
+
+  Future<bool> _isUsernameTaken(String username) async {
+    final result = await FirebaseFirestore.instance
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
+    return result.docs.isNotEmpty;
   }
 
   Future<void> _saveSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkTheme', _isDarkTheme);
-    await _updateUser();
     setState(() {}); // Update UI to reflect theme change
+    _showSnackBar('Settings saved');
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _usernameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -75,53 +167,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text('Settings'),
         actions: [
           TextButton(
-            onPressed: () {
-              _saveSettings();
-            },
+            onPressed: _saveSettings,
             child: Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
         backgroundColor: Colors.teal,
       ),
-      body: ListView(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           ListTile(
             title: Text(
               'Signed in as',
-              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isDarkTheme ? Colors.white : Colors.black),
             ),
             subtitle: Text(
               _currentUsername,
-              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isDarkTheme ? Colors.white : Colors.black),
             ),
           ),
           Divider(color: _isDarkTheme ? Colors.grey : Colors.black),
           ListTile(
             title: Text(
               'Change Username',
-              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isDarkTheme ? Colors.white : Colors.black),
             ),
-            onTap: () => _changeUsernameDialog(),
+            onTap: _changeUsernameDialog,
           ),
           ListTile(
             title: Text(
               'Change Email',
-              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isDarkTheme ? Colors.white : Colors.black),
             ),
-            onTap: () => _changeEmailDialog(),
+            onTap: _changeEmailDialog,
           ),
           ListTile(
             title: Text(
               'Change Password',
-              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isDarkTheme ? Colors.white : Colors.black),
             ),
-            onTap: () => _changePasswordDialog(),
+            onTap: _changePasswordDialog,
           ),
           SwitchListTile(
             title: Text(
               'Dark Theme',
-              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isDarkTheme ? Colors.white : Colors.black),
             ),
             value: _isDarkTheme,
             onChanged: (bool value) {
@@ -147,21 +245,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               labelText: 'New Username',
               labelStyle: TextStyle(color: Colors.grey),
             ),
-            style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+            style:
+            TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: Text('Cancel',
+                  style:
+                  TextStyle(color: _isDarkTheme ? Colors.white : Colors.black)),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: Text('Change'),
+              child: Text('Change',
+                  style: TextStyle(color: Colors.teal)),
               onPressed: () {
-                _updateUser();
                 Navigator.of(context).pop();
+                _updateUsername();
               },
             ),
           ],
+          backgroundColor: _isDarkTheme ? Colors.grey[800] : Colors.white,
         );
       },
     );
@@ -179,21 +282,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               labelText: 'New Email',
               labelStyle: TextStyle(color: Colors.grey),
             ),
-            style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+            style:
+            TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: Text('Cancel',
+                  style:
+                  TextStyle(color: _isDarkTheme ? Colors.white : Colors.black)),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: Text('Change'),
+              child: Text('Change', style: TextStyle(color: Colors.teal)),
               onPressed: () {
-                _updateUser();
                 Navigator.of(context).pop();
+                _updateEmail();
               },
             ),
           ],
+          backgroundColor: _isDarkTheme ? Colors.grey[800] : Colors.white,
         );
       },
     );
@@ -218,7 +325,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   labelStyle: TextStyle(color: Colors.grey),
                 ),
                 obscureText: true,
-                style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+                style: TextStyle(
+                    color: _isDarkTheme ? Colors.white : Colors.black),
               ),
               TextField(
                 controller: _confirmPasswordController,
@@ -227,41 +335,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   labelStyle: TextStyle(color: Colors.grey),
                 ),
                 obscureText: true,
-                style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black),
+                style: TextStyle(
+                    color: _isDarkTheme ? Colors.white : Colors.black),
               ),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: Text('Cancel',
+                  style:
+                  TextStyle(color: _isDarkTheme ? Colors.white : Colors.black)),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: Text('Change'),
-              onPressed: () async {
-                if (_newPasswordController.text == _confirmPasswordController.text) {
-                  final user = await _dbHelper.getUser(_emailController.text);
-                  if (user != null) {
-                    Map<String, dynamic> updatedUser = Map.from(user);
-                    updatedUser['password'] = _newPasswordController.text;
-                    await _dbHelper.updateUser(updatedUser);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Password updated')),
-                    );
-                    Navigator.of(context).pop();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('User not found')),
-                    );
-                  }
+              child: Text('Change', style: TextStyle(color: Colors.teal)),
+              onPressed: () {
+                if (_newPasswordController.text ==
+                    _confirmPasswordController.text) {
+                  Navigator.of(context).pop();
+                  _updatePassword(_newPasswordController.text);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Passwords do not match')),
-                  );
+                  _showSnackBar('Passwords do not match');
                 }
               },
             ),
           ],
+          backgroundColor: _isDarkTheme ? Colors.grey[800] : Colors.white,
         );
       },
     );

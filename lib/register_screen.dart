@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'database_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -11,11 +13,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _dbHelper = DatabaseHelper();
+  bool _isLoading = false;
 
   Future<void> _register() async {
-    final email = _emailController.text;
-    final username = _usernameController.text;
+    final email = _emailController.text.trim();
+    final username = _usernameController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
@@ -34,14 +36,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final user = await _dbHelper.getUser(email);
-    final userByUsername = await _dbHelper.getUser(username);
-    if (user == null && userByUsername == null) {
-      await _dbHelper.insertUser({'email': email, 'username': username, 'password': password});
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create user account
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Save additional user info to Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'email': email,
+        'username': username,
+      });
+
+      // Initialize DatabaseService (if needed)
+      final dbService = DatabaseService(uid: userCredential.user!.uid);
+
+      // Show success message
       _showSnackBar('Account created successfully');
-      Navigator.pop(context);
-    } else {
-      _showSnackBar('Email or Username already exists');
+
+      // Optionally, you can clear the input fields
+      _emailController.clear();
+      _usernameController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Registration failed: ${e.message}';
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'Email already exists';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'Password should be at least 6 characters';
+      }
+      _showSnackBar(errorMessage);
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
+    } catch (e) {
+      // Handle other errors
+      String errorMessage = 'An unexpected error occurred: $e';
+      _showSnackBar(errorMessage);
+      print('Exception: $e');
+    } finally {
+      // Ensure the loading indicator is dismissed
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -50,7 +94,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    print('Showing SnackBar: $message');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 5),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -76,7 +135,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(height: 16),
               _buildTextField(_confirmPasswordController, 'Confirm Password', obscureText: true),
               SizedBox(height: 20),
-              _buildElevatedButton('Register', _register),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : _buildElevatedButton('Register', _register),
               _buildTextButton('Back to Login', () => Navigator.pop(context)),
             ],
           ),
@@ -85,7 +146,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String labelText, {bool obscureText = false}) {
+  Widget _buildTextField(TextEditingController controller, String labelText,
+      {bool obscureText = false}) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
@@ -93,7 +155,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         labelStyle: TextStyle(color: Colors.grey),
         filled: true,
         fillColor: Colors.grey[800],
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        contentPadding:
+        EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.0),
           borderSide: BorderSide.none,
@@ -105,7 +168,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   TextStyle _textStyle(Color color, double fontSize, FontWeight fontWeight) {
-    return TextStyle(fontFamily: 'Roboto', color: color, fontSize: fontSize, fontWeight: fontWeight);
+    return TextStyle(
+      fontFamily: 'Roboto',
+      color: color,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+    );
   }
 
   Widget _buildElevatedButton(String text, VoidCallback onPressed) {
